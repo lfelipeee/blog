@@ -1,0 +1,81 @@
+# Configuração básica do site
+baseURL: https://example.org/
+languageCode: en-us
+title: My New Hugo Site
+theme: 'PaperMod'
+
+# Parâmetros do tema PaperMod
+params:
+  defaultTheme: auto
+  disableThemeToggle: false
+  DateFormat: "January 1, 1970"
+
+  # Configurações globais dos posts
+  ShowShareButtons: false         # Oculta botões de compartilhamento
+  ShowReadingTime: true           # Mostra tempo de leitura
+  ShowWordCount: true             # Mostra contagem de palavras
+  ShowToc: true                   # Mostra índice no post
+  TocOpen: false                  # Índice fechado por padrão
+  ShowBreadCrumbs: true           # Mostra caminho de navegação
+  ShowPastNavLinks: false         # Oculta links para posts anteriores/seguintes
+  ShowCodeCopyButtons: true       # Mostra botão para copiar código
+
+  # Link de edição nos posts
+  editPost:
+    URL: "https://github.com/lfelipeee/blog/edit/main/content"
+    Text: "Suggest changes"
+    appendFilePath: true
+
+  # Conteúdo da home (modo homeInfo)
+  homeInfoParams:
+    Title: Hi there
+    Content: Info, links, about...
+
+  # Ícones de redes sociais
+  socialIcons:
+    - name: GitHub
+      url: "https://www.github.com/lfelipeee"
+
+    - name: LinkedIn
+      url: "https://www.linkedin.com/"
+
+# Menu de navegação no topo
+menu:
+  main:
+    - identifier: posts
+      name: Posts
+      url: "/posts"
+      weight: 1
+
+    - identifier: search
+      name: Search
+      url: "/search"
+      weight: 2
+
+    - identifier: tags
+      name: Tags
+      url: "/tags"
+      weight: 3
+
+# Ativa páginas para tags e categorias
+taxonomies:
+  tag: tags
+  category: categories
+
+# Saídas geradas para a página inicial
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON
+
+# Configurações de busca (Fuse.js)
+fuseOpts:
+  isCaseSensitive: false
+  shouldSort: true
+  location: 0
+  distance: 1000
+  threshold: 0.4
+  minMatchCharLength: 1
+  limit: 10
+  keys: ["title", "permalink", "summary", "content"]
