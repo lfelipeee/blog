@@ -1,0 +1,28 @@
+# === Hugo generated files ===
+public/
+resources/
+hugo_stats.json
+hugo.yaml~
+
+# === Sistema operacional ===
+.DS_Store
+Thumbs.db
+
+# === IDEs e editores ===
+.vscode/
+.idea/
+
+# === Logs e temporários ===
+*.log
+*.tmp
+*.swp
+
+# === Node.js (caso use npm com tema) ===
+node_modules/
+package-lock.json
+
+# === Git submodule removido ===
+themes/*/.git
+
+# === Arquivo de lock do hugo server ===
+.hugo_build.lock
