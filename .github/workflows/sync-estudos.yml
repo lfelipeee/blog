@@ -3,9 +3,9 @@ name: Sync and Process Posts
 on:
   push:
     branches: [ "main" ]
-  schedule: 
-    - cron: '0 0 * * *' # Daily Sync at 00:00 UTC
-  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'  # Roda diariamente às 00:00 UTC
+  workflow_dispatch:      # Permite execução manual
 
 jobs:
   sync:
@@ -14,12 +14,12 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout Hugo Repo
+      - name: Checkout Hugo Blog
         uses: actions/checkout@v4
         with:
-          repository: lfelipeee/blog
+          repository: lfelipeee/hugo-blog
           token: ${{ secrets.ACCESS_TOKEN }}
-          fetch-depth: 0
+          path: blog
 
       - name: Checkout Estudos Repo
         uses: actions/checkout@v4
@@ -30,36 +30,51 @@ jobs:
 
       - name: Process Markdown Files
         run: |
-          mkdir -p content/posts/
-          cd estudos
+          # Cria diretório de destino
+          mkdir -p blog/content/posts/
+          
+          # Processa cada arquivo .md
+          for file in estudos/*.md; do
+            [ -f "$file" ] || continue  # Garante que é arquivo
+            
+            filename=$(basename "$file")
+            title="${filename%.md}"
 
-          for file in *.md; do
-            title=$(basename "$file" .md)
-            tags=$(grep -oP '^#\w+' "$file" | sed 's/#//g' | sed 's/^/"/;s/$/"/' | paste -sd ", " -)
+            # Extrai tags do início do arquivo e formata
+            tags=$(grep -oP '^#\w+' "$file" | sed 's/#//g' | paste -sd "," - | sed 's/\([^,]*\)/"\1"/g')
+
+            # Verifica se contém #draft
             draft=$(grep -q '#draft' "$file" && echo "true" || echo "false")
 
-            # Remove linhas com #tags do corpo
+            # Remove todas as linhas de tags do corpo
             sed -i '/^#\w\+/d' "$file"
 
-            # Usa a data do último commit daquele arquivo no repo 'estudos'
-            commit_date=$(git log -1 --format="%cI" -- "$file")
+            # Obtém data do último commit ou usa data atual
+            commit_date=$(git -C estudos log -1 --format="%cI" -- "$file" || true)
+            commit_date=${commit_date:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
 
-            # Gera front matter
-            front_matter=$(printf "---\ntitle: \"%s\"\ndate: %s\ntags:[%s]\ndraft: %s\n---\n" \
-              "$title" \
-              "$commit_date" \
-              "$tags" \
-              "$draft")
-
-            # Salva o arquivo com front matter no repositório Hugo
-            echo "$front_matter" > "../content/posts/$file"
-            cat "$file" >> "../content/posts/$file"
+            # Gera o conteúdo com front matter e corpo
+            {
+              echo "---"
+              echo "title: \"$title\""
+              echo "date: $commit_date"
+              echo "tags: [$tags]"
+              echo "draft: $draft"
+              echo "---"
+              cat "$file"
+            } > "blog/content/posts/$filename"
           done
 
       - name: Commit and Push
         run: |
+          cd blog
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add content/posts/
-          git diff --quiet || git commit -m "Sync posts [$(date +'%d-%m-%Y')]"
-          git push
+          
+          if ! git diff --quiet; then
+            git commit -m "Atualização automática de posts [$(date +'%Y-%m-%d %H:%M')]"
+            git push
+          else
+            echo "Nenhuma alteração detectada"
+          fi
