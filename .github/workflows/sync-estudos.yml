@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
   schedule: 
-    - cron: '0 0 * * *' # Daily Sync 12:00 UTC
+    - cron: '0 0 * * *' # Daily Sync at 00:00 UTC
 
 jobs:
   sync:
@@ -29,7 +29,7 @@ jobs:
 
       - name: Process Markdown Files
         run: |
-          mkdir -p blog/content/posts/
+          mkdir -p content/posts/
           cd estudos
 
           for file in *.md; do
@@ -37,14 +37,20 @@ jobs:
             tags=$(grep -oP '^#\w+' "$file" | sed 's/#//g' | sed 's/^/"/;s/$/"/' | paste -sd ", " -)
             draft=$(grep -q '#draft' "$file" && echo "true" || echo "false")
 
-            sed -i '/^#\w+/d' "$file"
+            # Remove linhas com #tags do corpo
+            sed -i '/^#\w\+/d' "$file"
 
+            # Usa a data do último commit daquele arquivo no repo 'estudos'
+            commit_date=$(git log -1 --format="%cI" -- "$file")
+
+            # Gera front matter
             front_matter=$(printf "---\ntitle: \"%s\"\ndate: %s\ntags:[%s]\ndraft: %s\n---\n" \
               "$title" \
-              "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+              "$commit_date" \
               "$tags" \
               "$draft")
 
+            # Salva o arquivo com front matter no repositório Hugo
             echo "$front_matter" > "../content/posts/$file"
             cat "$file" >> "../content/posts/$file"
           done
@@ -56,5 +62,3 @@ jobs:
           git add content/posts/
           git diff --quiet || git commit -m "Sync posts [$(date +'%d-%m-%Y')]"
           git push
-
-         
