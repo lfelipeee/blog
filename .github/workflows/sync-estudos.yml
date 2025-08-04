@@ -64,6 +64,12 @@ jobs:
               cat "$file"
             } > "blog/content/posts/$filename"
           done
+          
+      - name: Debug git status
+        run: |
+          cd blog
+          git status
+          git diff --stat
 
       - name: Commit and Push
         run: |
