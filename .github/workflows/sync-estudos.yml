@@ -3,25 +3,23 @@ name: Sync and Process Posts
 on:
   push:
     branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * *'  # Daily sync
+  schedule: 
+    - cron: '0 0 * * *' # Daily Sync 12:00 UTC
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Push permission
+      contents: write
 
     steps:
-      # Checkout target repo (Hugo blog)
       - name: Checkout Hugo Repo
         uses: actions/checkout@v4
         with:
-          repository: lfelipeee/hugo-blog
+          repository: lfelipeee/blog
           token: ${{ secrets.ACCESS_TOKEN }}
-          fetch-depth: 0  # Full history for push
+          fetch-depth: 0
 
-      # Checkout source repo (Markdown files)
       - name: Checkout Estudos Repo
         uses: actions/checkout@v4
         with:
@@ -29,34 +27,28 @@ jobs:
           token: ${{ secrets.ACCESS_TOKEN }}
           path: estudos
 
-      # Process Markdown files
       - name: Process Markdown Files
         run: |
           mkdir -p content/posts/
           cd estudos
 
           for file in *.md; do
-            # Extract metadata
             title=$(basename "$file" .md)
             tags=$(grep -oP '^#\w+' "$file" | sed 's/#//g' | sed 's/^/"/;s/$/"/' | paste -sd ", " -)
             draft=$(grep -q '#draft' "$file" && echo "true" || echo "false")
 
-            # Clean content
             sed -i '/^#\w+/d' "$file"
 
-            # Generate front matter
-            echo "---
-title: \"$title\"
-date: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
-tags: [$tags]
-draft: $draft
----" > "../content/posts/$file"
+            front_matter=$(printf "---\ntitle: \"%s\"\ndate: %s\ntags:[%s]\ndraft: %s\n---\n" \
+              "$title" \
+              "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+              "$tags" \
+              "$draft")
 
-            # Append content
+            echo "$front_matter" > "../content/posts/$file"
             cat "$file" >> "../content/posts/$file"
           done
 
-      # Commit changes
       - name: Commit and Push
         run: |
           git config --global user.name "GitHub Actions"
@@ -64,3 +56,5 @@ draft: $draft
           git add content/posts/
           git diff --quiet || git commit -m "Sync posts [$(date +'%d-%m-%Y')]"
           git push
+
+         
