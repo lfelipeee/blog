@@ -29,7 +29,7 @@ jobs:
 
       - name: Process Markdown Files
         run: |
-          mkdir -p content/posts/
+          mkdir -p blog/content/posts/
           cd estudos
 
           for file in *.md; do
