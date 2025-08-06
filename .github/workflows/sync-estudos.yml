@@ -81,7 +81,7 @@ jobs:
         fi
 
         # Mensagem simples com data atual
-        msg="Atualizar arquivos em $(date '+%Y-%m-%d %H:%M:%S')"
+        msg="$(date '+%Y-%m-%d %H:%M:%S')"
         
         echo "$msg"
         git commit -m "$msg"
