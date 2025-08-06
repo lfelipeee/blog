@@ -62,17 +62,8 @@ jobs:
             # Remove todas as tags #tag do conteúdo e linhas vazias criadas
             content_sem_tags=$(echo "$content" | sed 's/#\w\+\b//g' | sed '/^\s*$/d')
 
-            frontmatter=$(cat <<-EOF
-            ---
-            title: "$filename"
-            date: "$mod_date"
-            tags: $tags_yaml
-            draft: $draft
-            ---
-            EOF
-            )
-
-            echo -e "$frontmatter\n\n$content_sem_tags" > "$file"
+            # Front-matter one-liner para evitar problema de identação
+            echo -e "---\ntitle: \"$filename\"\ndate:\"$mod_date\"\ntags: $tags_yaml\ndraft: $draft\n---\n\n$content_sem_tags" > "$file"
           fi
         done
 
