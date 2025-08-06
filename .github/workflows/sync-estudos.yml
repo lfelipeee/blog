@@ -69,7 +69,7 @@ jobs:
             tags: $tags_yaml
             draft: $draft
             ---
-            EOF
+EOF
             )
 
             echo -e "$frontmatter\n\n$content_sem_tags" > "$file"
