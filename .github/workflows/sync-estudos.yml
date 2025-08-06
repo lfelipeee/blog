@@ -25,7 +25,7 @@ jobs:
     - name: Copiar somente arquivos markdown da raiz do repo privado para blog/content/posts
       run: |
         mkdir -p content/posts
-        cp repo-estudos/6\ -\ Full\ Notes -name '*.md' -exec cp {} content/posts/ \; || echo "Nenhum arquivo markdown encontrado"
+        find 'repo-estudos/6 - Full Notes' -type f -name '*.md' -exec cp {} content/posts/ \; || echo "Nenhum arquivo markdown encontrado"
 
     - name: Adicionar front-matter com tags extraídas e draft em cada arquivo markdown copiado
       run: |
