@@ -1,5 +1,5 @@
 # Configuração básica do site
-baseURL: https://example.org/
+baseURL: "https://lfelipeee.github.io/blog"
 languageCode: en-us
 title: My New Hugo Site
 theme: 'PaperMod'
