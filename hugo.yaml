@@ -1,14 +1,17 @@
 # Configuração básica do site
 baseURL: "https://lfelipeee.github.io/blog"
-languageCode: en-us
-title: My New Hugo Site
-theme: 'PaperMod'
+languageCode: "en-us"
+title: "My Study Journal"
+theme: "PaperMod"
+
+time:
+  location: "America/Sao_Paulo"
 
 # Parâmetros do tema PaperMod
 params:
   defaultTheme: auto
   disableThemeToggle: false
-  DateFormat: "January 1, 1970"
+  DateFormat: "2000-01-02 12:00:00"
 
   # Configurações globais dos posts
   ShowShareButtons: false         # Oculta botões de compartilhamento
@@ -28,8 +31,11 @@ params:
 
   # Conteúdo da home (modo homeInfo)
   homeInfoParams:
-    Title: Hi there
-    Content: Info, links, about...
+    Title: My Learning Journey
+    Content: |
+      Welcome to my digital study log. Here, I will dump all my study notes -- from computer networks and programming concepts to practical troubleshooting. These notes help me reinforce knowledge, stay consistent, and improve my English along the way.
+
+      Feel free to explore. Maybe you'll find something useful too.
 
   # Ícones de redes sociais
   socialIcons:
@@ -37,7 +43,7 @@ params:
       url: "https://www.github.com/lfelipeee"
 
     - name: LinkedIn
-      url: "https://www.linkedin.com/"
+      url: "https://www.linkedin.com/in/luizfelipemanha/"
 
 # Menu de navegação no topo
 menu:
