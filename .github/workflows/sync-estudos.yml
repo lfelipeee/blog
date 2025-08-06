@@ -1,86 +1,111 @@
-name: Sync and Process Posts
+name: Sincronizar e processar arquivos markdown do repo privado estudos para blog
 
 on:
-  push:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * *'  # Roda diariamente às 00:00 UTC
-  workflow_dispatch:      # Permite execução manual
+  workflow_dispatch:
 
 jobs:
-  sync:
+  sync_and_process:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
-      - name: Checkout Hugo Blog
-        uses: actions/checkout@v4
-        with:
-          repository: lfelipeee/blog
-          token: ${{ secrets.ACCESS_TOKEN }}
-          path: blog
+    - name: Fazer checkout do repo público blog (destino)
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.TOKEN }}
 
-      - name: Checkout Estudos Repo
-        uses: actions/checkout@v4
-        with:
-          repository: lfelipeee/estudos
-          token: ${{ secrets.ACCESS_TOKEN }}
-          path: estudos
+    - name: Fazer checkout do repo privado estudos (origem)
+      uses: actions/checkout@v3
+      with:
+        repository: lfelipeee/estudos
+        token: ${{ secrets.TOKEN }}
+        path: repo-estudos
 
-      - name: Process Markdown Files
-        run: |
-          # Cria diretório de destino
-          mkdir -p blog/content/posts/
-          
-          # Processa cada arquivo .md
-          for file in estudos/*.md; do
-            [ -f "$file" ] || continue  # Garante que é arquivo
-            
-            filename=$(basename "$file")
-            title="${filename%.md}"
+    - name: Copiar somente arquivos markdown da raiz do repo privado para blog/content/posts
+      run: |
+        mkdir -p content/posts
+        cp repo-estudos/*.md content/posts/ || echo "Nenhum arquivo markdown encontrado"
 
-            # Extrai tags do início do arquivo e formata
-            tags=$(grep -oP '^#\w+' "$file" | sed 's/#//g' | paste -sd "," - | sed 's/\([^,]*\)/"\1"/g')
+    - name: Adicionar front-matter com tags extraídas e draft em cada arquivo markdown copiado
+      run: |
+        for file in content/posts/*.md; do
+          if [ -f "$file" ]; then
+            filename=$(basename "$file" .md)
+            mod_date=$(stat -c '%y' "$file" | cut -d'.' -f1)
 
-            # Verifica se contém #draft
-            draft=$(grep -q '#draft' "$file" && echo "true" || echo "false")
+            content=$(cat "$file")
 
-            # Remove todas as linhas de tags do corpo
-            sed -i '/^#\w\+/d' "$file"
+            # Extrai todas as tags no formato #tag (letras, números, _ e -)
+            tags=$(echo "$content" | grep -o '#[a-zA-Z0-9_-]\+' | tr -d '#' | tr '\n' ' ')
 
-            # Obtém data do último commit ou usa data atual
-            commit_date=$(git -C estudos log -1 --format="%cI" -- "$file" || true)
-            commit_date=${commit_date:-$(date -u +"%Y-%m-%dT%H:%M:%SZ")}
+            # Verifica se a tag draft está presente
+            draft="false"
+            for tag in $tags; do
+              if [ "$tag" == "draft" ]; then
+                draft="true"
+              fi
+            done
 
-            # Gera o conteúdo com front matter e corpo
-            {
-              echo "---"
-              echo "title: \"$title\""
-              echo "date: $commit_date"
-              echo "tags: [$tags]"
-              echo "draft: $draft"
-              echo "---"
-              cat "$file"
-            } > "blog/content/posts/$filename"
-          done
-          
-      - name: Debug git status
-        run: |
-          cd blog
-          git status
-          git diff --stat
+            # Remove a tag draft da lista de tags
+            tags=$(echo $tags | sed 's/draft//g' | xargs)
 
-      - name: Commit and Push
-        run: |
-          cd blog
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          git add content/posts/
-          
-          if ! git diff --quiet; then
-            git commit -m "Atualização automática de posts [$(date +'%Y-%m-%d %H:%M')]"
-            git push
-          else
-            echo "Nenhuma alteração detectada"
+            # Converte lista de tags em formato YAML
+            if [ -z "$tags" ]; then
+              tags_yaml="[]"
+            else
+              tags_yaml="["
+              for t in $tags; do
+                tags_yaml="${tags_yaml}'${t}', "
+              done
+              tags_yaml="${tags_yaml%, }]"
+            fi
+
+            # Remove todas as tags #tag do conteúdo e linhas vazias criadas
+            content_sem_tags=$(echo "$content" | sed 's/#\w\+\b//g' | sed '/^\s*$/d')
+
+            frontmatter=$(cat <<EOF
+            ---
+            title: "$filename"
+            date: "$mod_date"
+            tags: $tags_yaml
+            draft: $draft
+            ---
+            EOF
+            )
+
+            echo -e "$frontmatter\n\n$content_sem_tags" > "$file"
           fi
+        done
+
+    - name: Commit e push com mensagens originais do repo estudos por arquivo
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add content/posts/
+
+        if git diff --cached --quiet; then
+          echo "Nada a commitar"
+          exit 0
+        fi
+
+        msg="Atualizar arquivos com mensagens de commit originais do repo estudos:\n\n"
+
+        for file in content/posts/*.md; do
+          if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            source_file="repo-estudos/$filename"
+
+            commit_hash=$(git -C repo-estudos log -n 1 --pretty=format:%H -- "$source_file")
+            if [ -n "$commit_hash" ]; then
+              commit_msg=$(git -C repo-estudos log -n 1 --format=%s "$commit_hash")
+              msg="${msg}- ${filename}: ${commit_msg}\n"
+            else
+              msg="${msg}- ${filename}: Sem commit encontrado\n"
+            fi
+          fi
+        done
+
+        echo -e "$msg"
+        git commit -m "$msg"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.TOKEN }}
