@@ -11,13 +11,13 @@ jobs:
     - name: Fazer checkout do repo público blog (destino)
       uses: actions/checkout@v3
       with:
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.ACCESS_TOKEN }}
 
     - name: Fazer checkout do repo privado estudos (origem)
       uses: actions/checkout@v3
       with:
         repository: lfelipeee/estudos
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.ACCESS_TOKEN }}
         path: repo-estudos
 
     - name: Copiar somente arquivos markdown da raiz do repo privado para blog/content/posts
@@ -108,4 +108,4 @@ jobs:
         git commit -m "$msg"
         git push
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
