@@ -2,6 +2,8 @@ name: Sincronizar e processar arquivos markdown do repo privado estudos para blo
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   sync_and_process:
@@ -63,7 +65,7 @@ jobs:
             content_sem_tags=$(echo "$content" | sed 's/#\w\+\b//g' | sed '/^\s*$/d')
 
             # Front-matter one-liner para evitar problema de identação
-            echo -e "---\ntitle: \"$filename\"\ndate:\"$mod_date\"\ntags: $tags_yaml\ndraft: $draft\n---\n\n$content_sem_tags" > "$file"
+            echo -e "---\ntitle: \"$filename\"\ndate: \"$mod_date\"\ntags: $tags_yaml\ndraft: $draft\n---\n\n$content_sem_tags" > "$file"
           fi
         done
 
@@ -78,24 +80,10 @@ jobs:
           exit 0
         fi
 
-        msg="Atualizar arquivos com mensagens de commit originais do repo estudos:\n\n"
-
-        for file in content/posts/*.md; do
-          if [ -f "$file" ]; then
-            filename=$(basename "$file")
-            source_file="repo-estudos/$filename"
-
-            commit_hash=$(git -C repo-estudos log -n 1 --pretty=format:%H -- "$source_file")
-            if [ -n "$commit_hash" ]; then
-              commit_msg=$(git -C repo-estudos log -n 1 --format=%s "$commit_hash")
-              msg="${msg}- ${filename}: ${commit_msg}\n"
-            else
-              msg="${msg}- ${filename}: Sem commit encontrado\n"
-            fi
-          fi
-        done
-
-        echo -e "$msg"
+        # Mensagem simples com data atual
+        msg="Atualizar arquivos em $(date '+%Y-%m-%d %H:%M:%S')"
+        
+        echo "$msg"
         git commit -m "$msg"
         git push
       env:
