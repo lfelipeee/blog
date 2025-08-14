@@ -1,6 +1,6 @@
 ---
 title: "Public vs Private IPv4 Addressing"
-date: "2025-08-13 00:50:04"
+date: "2025-08-14 00:50:12"
 tags: ['networking', 'ipv4', 'nat']
 draft: false
 ---
